@@ -30,6 +30,7 @@ export async function tryMerge(headBranch, baseBranch) {
       });
     } catch (err) {
       // could not automatically merge
+      console.log(`Could not automatically merge with error : ${err}`);
       // try creating a PR
       await octokit.rest.pulls
         .create({
