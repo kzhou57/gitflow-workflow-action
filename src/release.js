@@ -6,13 +6,19 @@ import { createExplainComment } from "./utils.js";
 /**
  * @returns {Promise<import("./types.js").Result>}
  */
-export async function createReleasePR() {
+export async function createReleasePR(isHotfix = false) {
   const isDryRun = Config.isDryRun;
+
+  const releaseBaseBranch = isHotfix ? Config.prodBranch : Config.developBranch;
+  const releaseBranchPrefix = isHotfix
+    ? Config.hotfixBranchPrefix
+    : Config.releaseBranchPrefix;
+  const releaseTitle = isHotfix ? "Hotfix" : "Release";
 
   const developBranchSha = (
     await octokit.rest.repos.getBranch({
       ...Config.repo,
-      branch: Config.developBranch,
+      branch: releaseBaseBranch,
     })
   ).data.commit.sha;
 
@@ -53,7 +59,7 @@ export async function createReleasePR() {
   const { data: releaseNotes } = await octokit.rest.repos.generateReleaseNotes({
     ...Config.repo,
     tag_name: version,
-    target_commitish: Config.developBranch,
+    target_commitish: releaseBaseBranch,
     previous_tag_name: latest_release_tag_name,
   });
 
@@ -64,11 +70,11 @@ export async function createReleasePR() {
 ${Config.releaseSummary}
   `;
 
-  const releaseBranch = `${Config.releaseBranchPrefix}${version}`;
+  const releaseBranch = `${releaseBranchPrefix}${version}`;
   let pull_number;
 
   if (!isDryRun) {
-    console.log(`create_release: Creating release branch`);
+    console.log(`create_release: Creating release branch ${releaseBranch}`);
 
     // create release branch from latest sha of develop branch
     await octokit.rest.git.createRef({
@@ -81,7 +87,7 @@ ${Config.releaseSummary}
 
     const { data: pullRequest } = await octokit.rest.pulls.create({
       ...Config.repo,
-      title: `Release ${releaseNotes.name || version}`,
+      title: `${releaseTitle} ${releaseNotes.name || version}`,
       body: releasePrBody,
       head: releaseBranch,
       base: Config.prodBranch,
@@ -115,7 +121,7 @@ ${Config.releaseSummary}
   mergedPrNumbers = Array.from(new Set(mergedPrNumbers)).sort();
 
   return {
-    type: "release",
+    type: isHotfix ? "hotfix" : "release",
     pull_number: pull_number,
     pull_numbers_in_release: mergedPrNumbers.join(","),
     version,

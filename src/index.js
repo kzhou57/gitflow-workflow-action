@@ -21,9 +21,9 @@ const start = async () => {
     res = await executeOnRelease();
   } else if (github.context.eventName === "workflow_dispatch") {
     console.log(
-      `gitflow-workflow-action: Workflow dispatched. Running createReleasePR...`,
+      `gitflow-workflow-action: Workflow dispatched from ${github.context.ref}. Running createReleasePR(${github.context.ref === 'refs/heads/main'})...`,
     );
-    res = await createReleasePR();
+    res = await createReleasePR( github.context.ref === 'refs/heads/main');
   } else {
     console.log(
       `gitflow-workflow-action: does not match any conditions to run. Skipping...`,
