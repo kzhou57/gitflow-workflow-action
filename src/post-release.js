@@ -58,24 +58,27 @@ async function executeOnRelease() {
     /**
      * Creating a hotfix release
      */
-    const now = pullRequest.merged_at
-      ? new Date(pullRequest.merged_at)
-      : new Date();
-    version = `hotfix-${now.getFullYear()}${String(now.getMonth() + 1).padStart(
-      2,
-      "0",
-    )}${String(now.getDate()).padStart(2, "0")}${String(
-      now.getHours(),
-    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    version = currentBranch.substring(Config.hotfixBranchPrefix.length);
+    const semverPattern = /^\d+\.\d+\.\d+/;
+    if (null === version.match(semverPattern)) {
+      // only create date based version if the branch name is not a semver
+      const now = pullRequest.merged_at
+        ? new Date(pullRequest.merged_at)
+        : new Date();
+      version = `hotfix-${now.getFullYear()}${String(now.getMonth() + 1).padStart(
+        2,
+        "0",
+      )}${String(now.getDate()).padStart(2, "0")}${String(
+        now.getHours(),
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    }
   }
 
   console.log(
     `on-release: ${releaseCandidateType}(${version}): Generating release`,
   );
 
-  const pullRequestBody = pullRequest.body;
-
-  assert(pullRequestBody, `pull request body is not defined`);
+  const pullRequestBody = pullRequest.body || `${releaseCandidateType == "hotfix" ? "Hotfix release" : "Release"} ${version}`;
 
   const { data: release } = await octokit.rest.repos.createRelease({
     ...Config.repo,
