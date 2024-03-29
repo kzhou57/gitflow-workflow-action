@@ -57046,30 +57046,38 @@ ${Config.releaseSummary}
       sha: developBranchSha,
     });
 
-    console.log(`create_release: Creating Pull Request`);
+    if (isHotfix) {
+      console.log(
+        `create_release: Hotfix release: have created release branch ${releaseBranch}, have to manually merge fix into it before create PR.`,
+      );
+        console.log(`create_release: Merging ${releaseBranch} into ${Config.prodBranch}`);
+    }
+    else{
+      console.log(`create_release: Creating Pull Request`);
 
-    const { data: pullRequest } = await octokit.rest.pulls.create({
-      ...Config.repo,
-      title: `${releaseTitle} ${releaseNotes.name || version}`,
-      body: releasePrBody,
-      head: releaseBranch,
-      base: Config.prodBranch,
-      maintainer_can_modify: false,
-    });
+      const { data: pullRequest } = await octokit.rest.pulls.create({
+        ...Config.repo,
+        title: `${releaseTitle} ${releaseNotes.name || version}`,
+        body: releasePrBody,
+        head: releaseBranch,
+        base: Config.prodBranch,
+        maintainer_can_modify: false,
+      });
 
-    pull_number = pullRequest.number;
+      pull_number = pullRequest.number;
 
-    await octokit.rest.issues.addLabels({
-      ...Config.repo,
-      issue_number: pullRequest.number,
-      labels: ["release"],
-    });
+      await octokit.rest.issues.addLabels({
+        ...Config.repo,
+        issue_number: pullRequest.number,
+        labels: ["release"],
+      });
 
-    await createExplainComment(pullRequest.number);
+      await createExplainComment(pullRequest.number);
 
-    console.log(
-      `create_release: Pull request has been created at ${pullRequest.html_url}`,
-    );
+      console.log(
+        `create_release: Pull request has been created at ${pullRequest.html_url}`,
+      );
+    }
   } else {
     console.log(
       `create_release: Dry run: would have created release branch ${releaseBranch} and PR with body:\n${releasePrBody}`,
