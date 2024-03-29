@@ -57128,6 +57128,11 @@ const start = async () => {
       `gitflow-workflow-action: Workflow dispatched from ${github.context.ref}. Running createReleasePR(${github.context.ref === 'refs/heads/main'})...`,
     );
     res = await createReleasePR( github.context.ref === 'refs/heads/main');
+    if (github.context.ref === 'refs/heads/main') {
+      core.notice(
+        `gitflow-workflow-action: Created a hotfix branch at ${res.release_branch} from main branch. Please make the changes in that branch and create PR to merge back to main, release workflow will trigger from there.`
+      );
+    }
   } else {
     console.log(
       `gitflow-workflow-action: does not match any conditions to run. Skipping...`,
